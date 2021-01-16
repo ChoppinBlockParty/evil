@@ -1104,10 +1104,7 @@ current search result."
                       #'evil-ex-search-setup
                     (read-string (if (eq evil-ex-search-direction 'forward)
                                      "/" "?")
-                                 (and evil-ex-search-history
-                                      (propertize
-                                       (car evil-ex-search-history)
-                                       'face 'shadow))
+                                 nil
                                  'evil-ex-search-history))
                 (quit
                  (evil-ex-search-stop-session)

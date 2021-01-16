@@ -175,8 +175,7 @@ is appended to the line."
               evil-ex-initial-input)))
       (and (> (length s) 0) s))))
   (let ((evil-ex-current-buffer (current-buffer))
-        (evil-ex-previous-command (unless initial-input
-                                    (car-safe evil-ex-history)))
+        (evil-ex-previous-command (unless initial-input nil))
         evil-ex-argument-handler
         evil-ex-info-string
         result)
