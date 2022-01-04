@@ -9,12 +9,22 @@ general, Evil is extensible in Emacs Lisp.
 Installation via package.el
 ---------------------------
 
-Evil is available as a package from MELPA stable and MELPA unstable.
-This is the recommended way of installing Evil.
+Evil is available as a package from MELPA stable, MELPA unstable and
+NonGNU ELPA. This is the recommended way of installing Evil.
 
-To set up `package.el` to work with one of these repositories, you can
-follow the instructions on
-`melpa.org <https://melpa.org/#/getting-started>`_.
+To set up `package.el` to work with one of the MELPA repositories, you
+can follow the instructions on `melpa.org
+<https://melpa.org/#/getting-started>`_.
+
+Alternatively you can use NonGNU ELPA. It is part of the default
+package archives as of Emacs 28. For older Emacs versions you'll need
+to add it yourself:
+
+.. code-block:: elisp
+
+   (add-to-list 'package-archives
+                (cons "nongnu" (format "http%s://elpa.nongnu.org/nongnu/"
+                                       (if (gnutls-available-p) "s" ""))))
 
 Once that is done, you can execute the following commands::
 
@@ -32,8 +42,8 @@ Finally, add the following lines to your Emacs init file:
 Manual installation
 -------------------
 
-First, install `undo-tree`, `goto-chg` and `cl-lib`.  If you have an
-Emacs version of 24.3 or newer, you should already have `cl-lib`.
+First, install `goto-chg` and `cl-lib`.  If you have an Emacs version
+of 24.3 or newer, you should already have `cl-lib`.
 
 Evil lives in a git repository.  To download Evil, do::
 

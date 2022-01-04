@@ -204,6 +204,13 @@ cursor, or a list of the above."
 (defvar evil-force-cursor nil
   "Overwrite the current states default cursor.")
 
+(defcustom evil-start-of-line nil
+  "Analogue of vim's `startofline'.
+If nil, preserve column when making relevant movements of the cursor.
+Otherwise, move the cursor to the start of the line."
+  :type 'boolean
+  :group 'evil)
+
 (defcustom evil-repeat-move-cursor t
   "\\<evil-normal-state-map>
 Whether repeating commands with \\[evil-repeat] may move the cursor.
@@ -592,6 +599,11 @@ in insert state."
   :type 'boolean
   :group 'evil)
 
+(defcustom evil-search-wrap-ring-bell nil
+  "Whether to ring the bell when search wraps around the buffer."
+  :type  'boolean
+  :group 'evil)
+
 (defvar dabbrev-search-these-buffers-only)
 (defvar dabbrev-case-distinction)
 (defcustom evil-complete-next-func
@@ -697,6 +709,7 @@ expression matching the buffer's name and STATE is one of `normal',
     bookmark-bmenu-mode
     bookmark-edit-annotation-mode
     browse-kill-ring-mode
+    bs-mode
     bubbles-mode
     bzr-annotate-mode
     calc-mode
@@ -886,18 +899,7 @@ expression matching the buffer's name and STATE is one of `normal',
 (defvar evil-pending-intercept-maps nil
   "An alist of pending intercept maps.")
 
-(defcustom evil-overriding-maps
-  '((Buffer-menu-mode-map . nil)
-    (color-theme-mode-map . nil)
-    (comint-mode-map . nil)
-    (compilation-mode-map . nil)
-    (grep-mode-map . nil)
-    (dictionary-mode-map . nil)
-    (ert-results-mode-map . motion)
-    (Info-mode-map . motion)
-    (speedbar-key-map . nil)
-    (speedbar-file-key-map . nil)
-    (speedbar-buffers-key-map . nil))
+(defcustom evil-overriding-maps '()
   "Keymaps that should override Evil maps.
 Entries have the form (MAP-VAR . STATE), where MAP-VAR is
 a keymap variable and STATE is the state whose bindings
@@ -1398,6 +1400,9 @@ type.")
 (evil-define-local-var evil-this-register nil
   "Current register.")
 
+(defvar evil-last-=-register-input nil
+  "Most recent input from the `=' register. A string.")
+
 (defvar evil-this-macro nil
   "Current macro register.")
 
@@ -1434,6 +1439,9 @@ of `evil-inhibit-operator' from one local scope to another.")
 
 (defvar evil-operator-range-motion nil
   "Motion of `evil-operator-range'.")
+
+(defvar evil-operator-start-col nil
+  "Used to restore column (where possible) after an operator has moved it.")
 
 (defvar evil-restriction-stack nil
   "List of previous restrictions.
@@ -1851,6 +1859,13 @@ See `evil-ex-init-shell-argument-completion'.")
 (defvar evil-previous-shell-command nil
   "The last shell command.")
 
+;; Eval
+(defvar evil-eval-history nil
+  "History of eval input, from the `=' register.")
+
+(defvar evil-eval-map (make-sparse-keymap)
+  "Keymap for eval input.")
+
 ;; Searching
 (defvar evil-ex-search-history nil
   "The history for the search command.")
@@ -1960,6 +1975,54 @@ This variable must be set before evil is loaded."
            (if value
                (add-hook 'minibuffer-setup-hook 'evil-initialize)
              (remove-hook 'minibuffer-setup-hook 'evil-initialize))))
+
+(defun evil--redo-placeholder (_count)
+  (user-error "Customize `evil-undo-system' for redo functionality."))
+
+(defvar evil-undo-function 'undo
+  "Function to be used by `evil-undo'.
+Customized via `evil-undo-system'.")
+
+(defvar evil-redo-function 'evil--redo-placeholder
+  "Function to be used by 'evil-redo'.
+Customized via `evil-undo-system'.")
+
+(defun evil-set-undo-system (system)
+  "Set `evil-undo-function' and `evil-redo-function` by SYSTEM."
+  (cond
+   ((not system)
+    (setq evil-undo-function 'undo
+          evil-redo-function 'evil--redo-placeholder))
+   ((eq system 'undo-redo)
+    (setq evil-undo-function 'undo-only
+          evil-redo-function 'undo-redo))
+   ((eq system 'undo-tree)
+    (setq evil-undo-function 'undo-tree-undo
+          evil-redo-function 'undo-tree-redo))
+   ((eq system 'undo-fu)
+    (setq evil-undo-function 'undo-fu-only-undo
+          evil-redo-function 'undo-fu-only-redo))
+   (t
+    (error "Unknown undo system %s" system))))
+
+(defcustom evil-undo-system nil
+  "Undo system Evil should use.  If equal to `undo-tree' or
+`undo-fu', those packages must be installed.  If equal to
+`undo-tree', `undo-tree-mode' must also be activated.  If equal
+to `undo-redo', Evil uses commands natively available in Emacs 28."
+  :type '(choice (const :tag "Vanilla undo" nil)
+                 (const undo-redo)
+                 (const undo-tree)
+                 (const undo-fu))
+  :group 'evil
+  :set #'(lambda (sym value)
+           (evil-set-undo-system value)
+           (set-default sym value)))
+
+(defcustom evil-visual-update-x-selection-p t
+  "Whether to update the X PRIMARY selection with the current visual region automatically."
+  :type  'boolean
+  :group 'evil)
 
 (defun evil-version ()
   (interactive)
